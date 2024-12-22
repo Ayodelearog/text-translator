@@ -41,4 +41,4 @@ yarn-error.log*
 next-env.d.ts
 
 #secret
-google-credentials.json
+./google-credentials.json
