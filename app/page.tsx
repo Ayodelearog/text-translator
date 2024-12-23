@@ -6,6 +6,25 @@ interface TranslationResponse {
 	translatedText: string;
 }
 
+interface Change {
+  original: string;
+  translated: string;
+  bold: boolean;
+  italic: boolean;
+  link: string;
+}
+
+interface TranslationItem {
+  key: string;
+  original: string;
+  translated: string;
+  changes?: Change[];
+}
+
+type NestedJson = {
+  [key: string]: string | TranslationItem | NestedJson | NestedJson[];
+};
+
 export async function translateText(
 	text: string,
 	targetLanguage: string
@@ -112,10 +131,10 @@ export default function TranslationSystem() {
 	};
 
 	const translateNestedJson = async (
-		data: Record<string, any>,
+		data: NestedJson,
 		targetLanguage: string
-	): Promise<Record<string, any>> => {
-		const translatedData: Record<string, any> = {};
+	): Promise<NestedJson> => {
+		const translatedData: NestedJson = {};
 
 		for (const [key, value] of Object.entries(data)) {
 			try {
@@ -154,7 +173,7 @@ export default function TranslationSystem() {
 					);
 				} else if (typeof value === "object" && value !== null) {
 					translatedData[key] = await translateNestedJson(
-						value,
+						value as NestedJson,
 						targetLanguage
 					);
 				} else {
