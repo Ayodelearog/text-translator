@@ -25,51 +25,7 @@ type NestedJson = {
   [key: string]: string | TranslationItem | NestedJson | NestedJson[];
 };
 
-export async function translateText(
-	text: string,
-	targetLanguage: string
-): Promise<string> {
-	if (!text || !targetLanguage) {
-		console.error("Invalid parameters passed to translateText:", {
-			text,
-			targetLanguage,
-		});
-		throw new Error("Both text and targetLanguage are required.");
-	}
 
-	try {
-		const response = await fetch("/api/translate", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({ text, targetLanguage }),
-		});
-
-		if (!response.ok) {
-			const errorData = await response.json();
-			console.error(
-				`API responded with status ${response.status}: ${errorData.message}`
-			);
-			throw new Error(`Translation failed: ${errorData.message}`);
-		}
-
-		const data: TranslationResponse = await response.json();
-		return data.translatedText;
-
-	} catch (error: unknown) {
-		// if (error instanceof Error) {
-		// 	console.error("Error in translateText:", error.message || error);
-		// }
-    // throw error;
-    console.error("Error in translateText:", error);
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('An unexpected error occurred during translation');
-  // }
-	}
-}
 
 export default function TranslationSystem() {
 	const [inputJson, setInputJson] = useState<string>("");
@@ -129,6 +85,49 @@ export default function TranslationSystem() {
 			setError("Please drop a JSON file");
 		}
 	};
+
+   async function translateText(
+    text: string,
+    targetLanguage: string
+  ): Promise<string> {
+    if (!text || !targetLanguage) {
+      console.error("Invalid parameters passed to translateText:", {
+        text,
+        targetLanguage,
+      });
+      throw new Error("Both text and targetLanguage are required.");
+    }
+  
+    try {
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text, targetLanguage }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(
+          `API responded with status ${response.status}: ${errorData.message}`
+        );
+        throw new Error(`Translation failed: ${errorData.message}`);
+      }
+  
+      const data: TranslationResponse = await response.json();
+      return data.translatedText;
+  
+    } catch (error: unknown) {
+      
+      console.error("Error in translateText:", error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('An unexpected error occurred during translation');
+    // }
+    }
+  }
 
 	const translateNestedJson = async (
 		data: NestedJson,

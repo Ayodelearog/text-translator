@@ -1,58 +1,61 @@
-import { NextRequest, NextResponse } from "next/server";
-import { TranslationServiceClient } from "@google-cloud/translate";
+import { NextResponse } from 'next/server';
+import { TranslationServiceClient } from '@google-cloud/translate';
 
-export async function POST(req: NextRequest) {
+// Initialize the Translation client
+const translationClient = new TranslationServiceClient();
+
+export async function POST(req: Request) {
   try {
-    const { text, targetLanguage, sourceLanguage = "en" } = await req.json();
-
-    console.log("Received text:", text);
-    console.log("Target language:", targetLanguage);
+    const { text, targetLanguage } = await req.json();
 
     if (!text || !targetLanguage) {
       return NextResponse.json(
-        { message: "Both 'text' and 'targetLanguage' are required." },
+        { message: "Both text and targetLanguage are required." },
         { status: 400 }
       );
     }
 
     const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
-    const credentials = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    const location = 'global';
 
-    if (!credentials || !projectId) {
+    if (!projectId) {
       return NextResponse.json(
-        { message: "Missing Google Cloud configuration." },
+        { message: "Google Cloud Project ID is not configured." },
         { status: 500 }
       );
     }
 
-    const translationClient = new TranslationServiceClient();
     const request = {
-      parent: `projects/${projectId}/locations/global`,
+      parent: `projects/${projectId}/locations/${location}`,
       contents: [text],
-      mimeType: "text/plain",
-      sourceLanguageCode: sourceLanguage,
+      mimeType: 'text/plain',
       targetLanguageCode: targetLanguage,
     };
 
     const [response] = await translationClient.translateText(request);
 
-    const translatedText = response.translations[0]?.translatedText || "";
-    if (!translatedText) {
+    if (!response || !response.translations || response.translations.length === 0) {
       return NextResponse.json(
         { message: "Translation API returned an empty response." },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ translatedText });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
+    const translatedText = response.translations[0]?.translatedText;
 
-      console.error("Error in translation API:", error);
+    if (!translatedText) {
       return NextResponse.json(
-        { message: "Error translating text", error: error.message },
+        { message: "Translated text is empty." },
         { status: 500 }
       );
     }
+
+    return NextResponse.json({ translatedText });
+  } catch (error) {
+    console.error('Translation error:', error);
+    return NextResponse.json(
+      { message: "An error occurred during translation." },
+      { status: 500 }
+    );
   }
 }
