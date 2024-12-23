@@ -45,11 +45,14 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ translatedText });
-  } catch (error: any) {
-    console.error("Error in translation API:", error);
-    return NextResponse.json(
-      { message: "Error translating text", error: error.message },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+
+      console.error("Error in translation API:", error);
+      return NextResponse.json(
+        { message: "Error translating text", error: error.message },
+        { status: 500 }
+      );
+    }
   }
 }
